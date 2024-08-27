@@ -1,8 +1,10 @@
 var express = require('express');
 var router = express.Router();
 const userModel = require('./users');
+const postModel = require("./posts");
 const passport = require('passport');
 const localStrategy = require('passport-local').Strategy;
+const upload = require('./multer');
 
 passport.use(new localStrategy(userModel.authenticate()));
 
@@ -12,19 +14,37 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/login', function(req, res, next) {
-  res.render("login",{error:req.flash('error')});
+  res.render("login", { error: req.flash('error') });
 });
 
 router.get('/feed', function(req, res, next) {
   res.render("feed");
 });
 
+router.post('/upload',isLoggedIn, upload.single("file"), async function(req, res, next) {
+  if (!req.file) {
+    return res.status(400).send("No files were given");
+  }
+
+  const user = await userModel.findOne({ username: req.session.passport.user });
+
+  const postdata = await postModel.create({
+    image: req.file.filename,
+    imageText: req.body.filecaption,
+    user: user._id
+  });
+
+  user.posts.push(postdata._id); // Corrected variable name
+  await user.save();
+  res.send("done");
+});
+
 router.get('/profile', isLoggedIn, async function(req, res, next) {
-  const user= await userModel.findOne({
-    username:req.session.passport.user
-  })
-  
-  res.render("profile",{user});
+  const user = await userModel.findOne({
+    username: req.session.passport.user
+  });
+  console.log(user);
+  res.render("profile", { user });
 });
 
 router.post("/register", function(req, res) {
@@ -39,14 +59,14 @@ router.post("/register", function(req, res) {
     })
     .catch(function(err) {
       console.log(err);
-      res.redirect('/register'); // Change the redirect to the correct route for registration
+      res.redirect('/register'); // Optionally add flash message for error
     });
 });
 
 router.post("/login", passport.authenticate("local", {
   successRedirect: "/profile",
   failureRedirect: "/login",
-  failureFlash:true
+  failureFlash: true
 }));
 
 router.get("/logout", function(req, res, next) {

@@ -2,10 +2,13 @@ const mongoose = require('mongoose');
 
 // Define the Post schema
 const postSchema = new mongoose.Schema({
-  postText: {
+ imageText: {
     type: String,
     required: true,
     trim: true,
+  },
+  image:{
+    type:String
   },
   createdAt: {
     type: Date,
@@ -22,6 +25,6 @@ const postSchema = new mongoose.Schema({
 });
 
 // Create a Post model using the schema
-module.exports= mongoose.model('Post', postSchema);
+module.exports= mongoose.model('post', postSchema);
 
  
